@@ -18,9 +18,11 @@ startTime = 0
 endTime = 0
 elapsedDuration = 0
 
+flag = 1
+
 with mp_hands.Hands(
-    min_detection_confidence=0.5,
-    min_tracking_confidence=0.5) as hands:
+    min_detection_confidence=0.7,
+    min_tracking_confidence=0.7) as hands:
     while cap.isOpened():
       success, image = cap.read()
       if not success:
@@ -56,10 +58,18 @@ with mp_hands.Hands(
 
           #print('fingertipX: '+str(fingertipX))
           #print(mp_hands.HandLandmark.INDEX_FINGER_TIP)
-          if (abs(Index_fingerX - Thumb_fingerX)) > 100 :
+          rows, cols, _channels = map(int, image.shape)
+          
+          if (abs(Index_fingerX - Thumb_fingerX)) > 80 :
             print("Zoom Out")
+            if flag == 0:
+              image = cv2.pyrUp(image, dstsize=(2*cols, 2*rows))
+              flag = 1
           else:
             print("Zoom In")
+            if flag == 1:
+              image = cv2.pyrDown(image, dstsize=(cols // 2, rows // 2))
+              flag = 0
           mp_drawing.draw_landmarks(image, hand_landmarks, mp_hands.HAND_CONNECTIONS)
           cv2.imshow('MediaPipe Hands', image)
       if cv2.waitKey(5) & 0xFF == 27:
