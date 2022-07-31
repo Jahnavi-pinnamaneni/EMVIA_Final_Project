@@ -21,8 +21,8 @@ elapsedDuration = 0
 flag = 1
 
 with mp_hands.Hands(
-    min_detection_confidence=0.7,
-    min_tracking_confidence=0.7) as hands:
+    min_detection_confidence=0.8,
+    min_tracking_confidence=0.8) as hands:
     while cap.isOpened():
       success, image = cap.read()
       if not success:
@@ -30,7 +30,7 @@ with mp_hands.Hands(
         # If loading a video, use 'break' instead of 'continue'.
         continue
 
-      startTime = time.time()
+      # startTime = time.time()
       # Flip the image horizontally for a later selfie-view display, and convert
       # the BGR image to RGB.
       image = cv2.cvtColor(cv2.flip(image, 1), cv2.COLOR_BGR2RGB)
@@ -59,24 +59,25 @@ with mp_hands.Hands(
           #print('fingertipX: '+str(fingertipX))
           #print(mp_hands.HandLandmark.INDEX_FINGER_TIP)
           rows, cols, _channels = map(int, image.shape)
-          
-          if (abs(Index_fingerX - Thumb_fingerX)) > 80 :
+          dim1 = (640,480)
+          dim2 = (320,240)
+          print(abs(Index_fingerX - Thumb_fingerX))
+          if (abs(Index_fingerX - Thumb_fingerX)) > 35 :
             print("Zoom Out")
-            if flag == 0:
-              image = cv2.pyrUp(image, dstsize=(2*cols, 2*rows))
-              flag = 1
-          else:
+            #image = cv2.pyrUp(image, dstsize=(480, 640))
+            image = cv2.resize(image, dim1,interpolation = cv2.INTER_AREA)
+          elif (abs(Index_fingerX - Thumb_fingerX)) <= 35:
             print("Zoom In")
-            if flag == 1:
-              image = cv2.pyrDown(image, dstsize=(cols // 2, rows // 2))
-              flag = 0
+            #image = cv2.pyrDown(image, dstsize=(240,320))
+            image = cv2.resize(image, dim2,interpolation = cv2.INTER_AREA)
           mp_drawing.draw_landmarks(image, hand_landmarks, mp_hands.HAND_CONNECTIONS)
           cv2.imshow('MediaPipe Hands', image)
+
       if cv2.waitKey(5) & 0xFF == 27:
         break
       
-      endTime = time.time()
-      elapsedDuration = endTime - startTime
+      # endTime = time.time()
+      # elapsedDuration = endTime - startTime
 
-      print("Frames Per Sec = {}".format(1 / elapsedDuration))
+      #print("Frames Per Sec = {}".format(1 / elapsedDuration))
 cap.release()
