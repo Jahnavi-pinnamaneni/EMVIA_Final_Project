@@ -1,6 +1,7 @@
 import cv2
 import mediapipe as mp
 import time
+import syslog
 mp_drawing = mp.solutions.drawing_utils
 mp_hands = mp.solutions.hands
 
@@ -20,13 +21,12 @@ elapsedDuration = 0
 count = 0
 
 flag = 1
-
 with mp_hands.Hands(
     min_detection_confidence=0.8,
     min_tracking_confidence=0.8) as hands:
     while cap.isOpened():
       print(count)
-      print(cap.get(cv2.CAP_PROP_FPS))
+      #print(cap.get(cv2.CAP_PROP_FPS))
       success, image = cap.read()
       if not success:
         print("Ignoring empty camera frame.")
@@ -64,15 +64,15 @@ with mp_hands.Hands(
           dim2 = (320,240)
           print(abs(Index_fingerX - Thumb_fingerX))
           if (abs(Index_fingerX - Thumb_fingerX)) > 10 :
-            print("Zoom Out")
+            syslog.syslog("count = {} Zoom Out".format(count))
             #image = cv2.pyrUp(image, dstsize=(480, 640))
             image = cv2.resize(image, dim1,interpolation = cv2.INTER_AREA)
           elif (abs(Index_fingerX - Thumb_fingerX)) <= 10:
-            print("Zoom In")
+            syslog.syslog("count = {} Zoom In".format(count))
             #image = cv2.pyrDown(image, dstsize=(240,320))
             image = cv2.resize(image, dim2,interpolation = cv2.INTER_AREA)
           else:
-            print("No detected")
+            syslog.syslog("count = {} Not detected".format(count))
           mp_drawing.draw_landmarks(image, hand_landmarks, mp_hands.HAND_CONNECTIONS)
         count+=1
       cv2.imshow('MediaPipe Hands', image)
