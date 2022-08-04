@@ -7,7 +7,7 @@ mp_hands = mp.solutions.hands
 
 
 # For webcam input:
-cap = cv2.VideoCapture("Video.mp4")
+cap = cv2.VideoCapture(0)
 cap.set(3,480)
 cap.set(4,360)
 
@@ -19,9 +19,12 @@ startTime = 0
 endTime = 0
 elapsedDuration = 0
 count = 0
+zoom_out_cnt = 0
+zoom_in_cnt = 0
 
 flag = 1
 with mp_hands.Hands(
+    max_num_hands=1,
     min_detection_confidence=0.8,
     min_tracking_confidence=0.8) as hands:
     while cap.isOpened():
@@ -54,28 +57,48 @@ with mp_hands.Hands(
           #         f'{hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP].x * image_width})'
           #         f'{hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP].y * image_height})'
           #     )
+
           Index_fingerX=hand_landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP].x * image_width
           Thumb_fingerX=hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP].x * image_width
+          Middle_fingerX=hand_landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_TIP].x * image_width
+          Middle_fingerY=hand_landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_MCP].x * image_width
+          Thumb_fingerY=hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_IP].y * image_height
+
+          #print("Index and middle finger {}".format(abs(Thumb_fingerX - Middle_fingerY)))
 
           #print('fingertipX: '+str(fingertipX))
           #print(mp_hands.HandLandmark.INDEX_FINGER_TIP)
           rows, cols, _channels = map(int, image.shape)
           dim1 = (640,480)
           dim2 = (320,240)
-          print(abs(Index_fingerX - Thumb_fingerX))
-          if (abs(Index_fingerX - Thumb_fingerX)) > 10 :
-            syslog.syslog("count = {} Zoom Out".format(count))
+          # print(abs(Index_fingerX - Thumb_fingerX))
+          if ((abs(Index_fingerX - Middle_fingerX)) < 20 and (abs(Index_fingerX - Middle_fingerX)) > 10):
+            print("Take picture")
+            cv2.imwrite(f'frames/Image_{time.time()}.jpg',image)
+          
+          elif ((abs(Index_fingerX - Middle_fingerX)) > 40 and (abs(Thumb_fingerX - Middle_fingerY) < 10)):
+            print("Close window")
+            cap.release()
+
+          elif (abs(Index_fingerX - Thumb_fingerX)) > 10 :
+            #syslog.syslog("count = {} Zoom Out".format(count))
+            #print("Zoom out")
+            zoom_out_cnt+=1
             #image = cv2.pyrUp(image, dstsize=(480, 640))
             image = cv2.resize(image, dim1,interpolation = cv2.INTER_AREA)
           elif (abs(Index_fingerX - Thumb_fingerX)) <= 10:
-            syslog.syslog("count = {} Zoom In".format(count))
+            #syslog.syslog("count = {} Zoom In".format(count))
+            #print("Zoom in")
+
             #image = cv2.pyrDown(image, dstsize=(240,320))
             image = cv2.resize(image, dim2,interpolation = cv2.INTER_AREA)
           else:
-            syslog.syslog("count = {} Not detected".format(count))
+            print("None")
+            #syslog.syslog("count = {} Not detected".format(count))
+
           mp_drawing.draw_landmarks(image, hand_landmarks, mp_hands.HAND_CONNECTIONS)
-        count+=1
-      cv2.imshow('MediaPipe Hands', image)
+          count+=1
+          cv2.imshow('MediaPipe Hands', image)
 
       if cv2.waitKey(1) & 0xFF == 27:
         break
